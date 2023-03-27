@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>    
+    <title>Análise Léxica</title>
+    <style>
+    body {
+        background-color: #D3D3D3;
+        text-align: center;
+    }
+    h1 {
+        color: #FFFFFF;
+        background-color: #000000;
+        padding: 10px;
+    }
+    table {
+        border-collapse: collapse;
+        margin-top: 20px;
+        background-color:#FFFFFF;
+        margin: 0 auto;
+    }
+    th, td {
+        border: 1px solid black;
+        padding: 8px;
+    }
+    th {
+        background-color: #000000d2;
+        color: #FFFFFF;
+    }
+    button {
+        background-color: #000000;
+        color: #FFFFFF;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #FFBF69;
+    }
+    .imagem-esquerda {
+        float: left;
+        margin-right: 20px;
+    }
+    .imagem-direita {
+        float: right;
+        margin-left: 20px;
+    }
+        img {
+        width: 200px;
+        height: 1700px;
+        }
+        
+    </style>
+</head>
+<body>
+    <h1>Análise Léxica para Python</h1>
+    <img class="imagem-esquerda" src="E:\teste HTML\WEB1\1.1.jpg" alt="Imagem à esquerda">
+    <img class="imagem-direita" src="E:\teste HTML\WEB1\1.1.jpg" alt="Imagem à direita">
+    <textarea id="input" rows="10" cols="50" autofocus></textarea>
+    <br>
+    <button onclick="analisar()">Analisar</button>
+    <button onclick="limpar()">Limpar</button>
+    <button onclick="gerarJSON()">Gerar JSON</button>
+
+    <br>
+
+    <table id="tabela">
+    <thead>
+        <tr>
+        <th>Token</th>
+        <th>Identificação</th>
+        <th>Tamanho</th>
+        <th>Posição (linha, coluna)</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+    </table>
+
+    <table id="tabelaSimbolos">
+    <thead>
+        <tr>
+            <th>Índice</th>
+            <th>Símbolo</th>
+            <th>Tipo</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+
+    <script>
+      // Definindo as palavras reservadas, operadores e terminador
+    const palavrasReservadas = ['False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 'finally', 'for', 'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return', 'try', 'while', 'with', 'yield', 'range', "do"];
+    const operadores = ["=", "+", "==", "!=", "<", ">", "<=", ">="];
+    const terminador = [";", ":"];
+
+      // Definindo a expressão regular para identificar tokens
+    const regexToken = /[a-zA-Z_][a-zA-Z0-9_]*|[0-9]+|[=+<>!]=?|;|:/g;
+
+        // Função para analisar o texto de entrada
+        function analisar() {
+        const input = document.getElementById("input").value;
+        const linhas = input.split("\n");
+
+        let tabelaSimbolos = document.getElementById("tabelaSimbolos").getElementsByTagName("tbody")[0];
+        let contadorSimbolo = 0;
+
+        let tabela = document.getElementById("tabela").getElementsByTagName("tbody")[0];
+        tabela.innerHTML = "";
+
+        // Variável para armazenar os identificadores e seu índice correspondente
+        let identificadores = {};
+
+        // Variável contador para armazenar o número do índice
+        let contadorIdentificador = 0;
+
+        // Variável contador para armazenar o número do índice para valores numéricos
+        let contadorNumerico = 0;
+
+        for (let i = 0; i < linhas.length; i++) {
+            let tokens = linhas[i].match(regexToken);
+            let coluna = 0;
+
+            for (let j = 0; j < tokens.length; j++) {
+            let token = tokens[j];
+            let identificacao;
+            let tamanho = token.length;
+
+            let posicaoInicial = linhas[i].indexOf(token, coluna);
+            let posicaoFinal = posicaoInicial + tamanho - 1;
+
+            if (palavrasReservadas.includes(token)) {
+                identificacao = "Palavra Reservada";
+            } else if (operadores.includes(token)) {
+                identificacao = "Operador";
+            } else if (terminador.includes(token)) {
+                identificacao = "Terminador";
+                posicaoFinal--;
+            } else if (!isNaN(token)) {
+                identificacao = `Constante [${++contadorNumerico}]`;
+
+            tabelaSimbolos.innerHTML += `
+                <tr>
+                    <td>${++contadorSimbolo}</td>
+                    <td>${token}</td>
+                    <td>Constante</td>
+                </tr>
+                `;
+            } else {
+                // Se for identificador, adicione um índice à identificação
+                if (identificadores[token]) {
+                // Se o identificador já foi encontrado, use o mesmo índice anterior
+                identificacao = `Identificador [${identificadores[token]}]`;
+                } else {
+                // Se o identificador é novo, crie um novo índice
+                contadorIdentificador++;
+                identificadores[token] = contadorIdentificador;
+                identificacao = `Identificador [${contadorIdentificador}]`;
+
+            // Adiciona o identificador à tabela de símbolos
+                tabelaSimbolos.innerHTML += `
+                <tr>
+                    <td>${++contadorSimbolo}</td>
+                    <<td>${token}</td>
+                    <td>Identificador</td>
+                </tr>
+                `;
+
+                contadorSimbolo = 0;
+
+                }
+            }
+
+            let linha = i;
+            let posicao = `(${linha}, ${posicaoInicial})`;
+
+            let row = tabela.insertRow(-1);
+            let tokenCell = row.insertCell(0);
+            let identificacaoCell = row.insertCell(1);
+            let tamanhoCell = row.insertCell(2);
+            let posicaoCell = row.insertCell(3);
+
+            tokenCell.innerHTML = token;
+            identificacaoCell.innerHTML = identificacao;
+            tamanhoCell.innerHTML = tamanho;
+            posicaoCell.innerHTML = posicao;
+
+            coluna = posicaoFinal + 1;
+            }
+        }
+    } 
+
+            function limpar() {
+            document.getElementById("input").value = "";
+            document.getElementById("input").focus();
+            } 
+
+            function gerarJSON() {
+                const tabela = document.getElementById("tabela");
+                const rows = tabela.rows;
+                const data = [];
+
+                for (let i = 0; i < rows.length; i++) {
+                    const cells = rows[i].cells;
+                    const rowData = {};
+
+                    for (let j = 0; j < cells.length; j++) {
+                    const headerText = tabela.rows[0].cells[j].textContent;
+                    const cellText = cells[j].textContent;
+                    rowData[headerText] = cellText;
+                    }
+
+                    data.push(rowData);
+                }
+
+                const jsonString = JSON.stringify(data, null, 2);
+                const blob = new Blob([jsonString], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "tabela.json";
+                a.click();
+
+                URL.revokeObjectURL(url);
+                }
+        </script>
+    </body>
+</html>
